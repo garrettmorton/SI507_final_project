@@ -26,10 +26,32 @@ except:
 ######-------------------------######
 #####################################
 
+class LegoSet():
+	def __init__(self, name, number, theme, price, pieces, age_low, age_high, rating, tags):
+		self.name = name
+		self.number = number
+		self.theme = theme
+		self.price = price
+		self.pieces = pieces
+		self.age_low = age_low
+		self.age_high = age_high
+		self.rating = rating
+		self.tags = tags
+
 def scrape_set_info(url):
 	pass
 
-def scrape_set_list(url):
+def scrape_set_list(baseurl):
+	pager = True
+	counter = 1
+	while pager:
+		url = baseurl + "?page=" + str(counter)
+		if url in CACHE_DICTION.keys():
+			html_chunk = CACHE_DICTION[url]
+		else:
+			html = requests.get(url).text
+			soup = BeautifulSoup(html, 'html.parser')
+			set_list = soup.find()
 	pass
 
 def scrape_theme_list():
@@ -37,13 +59,13 @@ def scrape_theme_list():
 	url = "https://shop.lego.com/en-US/category/themes"
 	if url in CACHE_DICTION.keys():
 		html_chunk = CACHE_DICTION[url]
+		print(html_chunk)
 	else:
 		html = requests.get(url).text
-		#only_themes = SoupStrainer(_class="CategoryListingPagestyle__Item-s880qxz-1 feEoDW")
-		soup = BeautifulSoup(html, 'html.parser')#, parse_only=only_themes)
-		theme_list = soup.find_all(class_="CategoryListingPagestyle__Item-s880qxz-1 feEoDW")
+		soup = BeautifulSoup(html, 'html.parser')
+		theme_list = soup.find(class_="CategoryListingPagestyle__List-s880qxz-0 hOTIjn")#CategoryListingPagestyle__Item-s880qxz-1 feEoDW")
 		html_chunk = str(theme_list)
-		print(theme_list[0])
+		print(html_chunk)
 		CACHE_DICTION[url] = html_chunk
 
 	#process html of page listing themes

@@ -76,6 +76,9 @@ def scrape_all_data():
 	pass
 
 def build_db():
+	# table of sets
+	# table of tags
+	# link table
 	pass
 
 #####################################

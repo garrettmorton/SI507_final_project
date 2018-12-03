@@ -124,8 +124,8 @@ def scrape_set_list(baseurl):
 		set_a_tags = set_ul.find_all("a", class_="ProductImage__ProductImageLink-s1x2glqd-0 esZrQH")
 		for item in set_a_tags:
 			set_url = "https://shop.lego.com" + item["href"]
-			print("{} || {}".format(list_page_url, set_url))
-			print("page {}: {}".format(pager, item["href"].split("/")[-1]))
+			#print("{} || {}".format(list_page_url, set_url)) #for debugging
+			#print("page {}: {}".format(pager, item["href"].split("/")[-1])) #for debugging
 			set_tuple = scrape_set_info(set_url)
 			set_objects.append(LegoSet(*set_tuple, theme))
 
@@ -148,7 +148,7 @@ def scrape_all_data():
 
 	return set_object_list
 
-def build_db():#object_list):
+def build_db():
 	conn = sqlite.connect(DB_NAME)
 	cur = conn.cursor()
 
@@ -157,6 +157,7 @@ def build_db():#object_list):
 	CREATE TABLE IF NOT EXISTS Sets (
 		Id INTEGER PRIMARY KEY AUTOINCREMENT,
 		SetNumber INTEGER NOT NULL,
+		SetName TEXT,
 		Theme TEXT,
 		Price REAL,
 		Pieces INTEGER,
@@ -193,11 +194,45 @@ def build_db():#object_list):
 	conn.close()
 	pass
 
+def populate_db(object_list):
+	build_db()
+	conn = sqlite.connect(DB_NAME)
+	cur = conn.cursor()
+
+	tag_list = []
+
+	for legoset in object_list:
+		set_values = [legoset.name, legoset.number, legoset.theme, legoset.price, legoset.pieces, legoset.age_low, legoset.age_high]
+		statement = '''
+		INSERT INTO Sets (SetName, SetNumber, Theme, Price, Pieces, AgeLow, AgeHigh)
+		VALUES (?,?,?,?,?,?,?)
+		'''
+		cur.execute(statement, set_values)
+		
+		for tag in legoset.tags:
+			if tag not in tag_list:
+				statement = '''
+				INSERT INTO Tags (TagName)
+				VALUES (?)
+				'''
+				cur.execute(statement, [tag])
+				tag_list.append(tag)
+			statement = '''
+			INSERT INTO SetLinkTag (SetId, TagId)
+			VALUES ((SELECT Id FROM Sets WHERE SetNumber=?), (SELECT Id FROM Tags WHERE TagName=?))
+			'''
+			cur.execute(statement, [legoset.number, tag])
+
+		conn.commit()
+
+	pass
+
+
 #####################################
 ######-------FOR TESTING-------######
 #scrape_theme_list()
-#print(scrape_set_list("https://shop.lego.com/en-US/category/star-wars"))
-build_db()
+object_list = scrape_set_list("https://shop.lego.com/en-US/category/star-wars")
+populate_db(object_list)
 
 cache_file = open(CACHE_FNAME, 'w')
 cache_contents = json.dumps(CACHE_DICTION)

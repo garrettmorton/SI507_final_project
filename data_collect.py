@@ -10,7 +10,7 @@ sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
 #####################################
 ######-------FOR TESTING-------######
 CACHE_FNAME = "html_cache.json"
-DB_NAME = "lego.sqlite"
+DB_NAME = "lego.db"
 
 try:
     cache_file = open(CACHE_FNAME,'r')
@@ -78,7 +78,11 @@ def scrape_set_info(url):
 		tags_list.append(item.get_text())
 
 	number = data_div.find("dd", class_="product-details__product-code").get_text()
-	pieces = data_div.find("dd", class_="product-details__piece-count").get_text()
+	pieces_tag = data_div.find("dd", class_="product-details__piece-count")
+	if pieces_tag == None:
+		pieces = None
+	else:
+		pieces = pieces_tag.get_text()
 	ages = data_div.find("dd", class_="product-details__ages").get_text()
 	age_tuple = ages.partition("-")
 	if age_tuple[1] == "":
@@ -109,17 +113,26 @@ def scrape_set_list(baseurl):
 			html = requests.get(list_page_url).text
 			soup = BeautifulSoup(html, 'html.parser')
 			set_ul = soup.find_all("ul", class_="ProductGridstyles__Grid-lc2zkx-2 dijnMv")
-			if len(set_ul) == 0:
+			test_length = set_ul[0].find_all("li")
+			if len(test_length) == 0:
 				pagination = False
 				break
-			html_chunk = str(set_ul[0])
+			set_ul = set_ul[0]
+			html_chunk = str(set_ul)
 			CACHE_DICTION[list_page_url] = html_chunk
 
 		set_a_tags = set_ul.find_all("a", class_="ProductImage__ProductImageLink-s1x2glqd-0 esZrQH")
 		for item in set_a_tags:
 			set_url = "https://shop.lego.com" + item["href"]
+			print("{} || {}".format(list_page_url, set_url))
+			print("page {}: {}".format(pager, item["href"].split("/")[-1]))
 			set_tuple = scrape_set_info(set_url)
 			set_objects.append(LegoSet(*set_tuple, theme))
+
+		cache_file = open(CACHE_FNAME, 'w')
+		cache_contents = json.dumps(CACHE_DICTION)
+		cache_file.write(cache_contents)
+		cache_file.close()
 
 		pager += 1
 
@@ -127,18 +140,64 @@ def scrape_set_list(baseurl):
 
 def scrape_all_data():
 	theme_url_list = scrape_theme_list()
-	pass
+	set_object_list = []
+	for theme in theme_url_list:
+		theme_set_list = scrape_set_list(theme)
+		for set_object in theme_set_list:
+			set_object_list.eppend(set_object)
 
-def build_db():
-	# table of sets
-	# table of tags
-	# link table
+	return set_object_list
+
+def build_db():#object_list):
+	conn = sqlite.connect(DB_NAME)
+	cur = conn.cursor()
+
+	#create set table
+	statement = '''
+	CREATE TABLE IF NOT EXISTS Sets (
+		Id INTEGER PRIMARY KEY AUTOINCREMENT,
+		SetNumber INTEGER NOT NULL,
+		Theme TEXT,
+		Price REAL,
+		Pieces INTEGER,
+		AgeLow INTEGER,
+		AgeHigh INTEGER
+	)
+	'''
+	cur.execute(statement)
+	conn.commit()
+
+	#create tag table
+	statement = '''
+	CREATE TABLE IF NOT EXISTS Tags (
+		Id INTEGER PRIMARY KEY AUTOINCREMENT,
+		TagName TEXT
+	)
+	'''
+	cur.execute(statement)
+	conn.commit()
+
+	#create link table between Sets and Tags
+	statement = '''
+	CREATE TABLE IF NOT EXISTS SetLinkTag (
+		Id INTEGER PRIMARY KEY AUTOINCREMENT,
+		SetId INTEGER,
+		TagId INTEGER,
+		FOREIGN KEY(SetId) REFERENCES Sets(Id),
+		FOREIGN KEY(TagId) REFERENCES Tags(Id)
+	)
+	'''
+	cur.execute(statement)
+	conn.commit()
+	
+	conn.close()
 	pass
 
 #####################################
 ######-------FOR TESTING-------######
 #scrape_theme_list()
-print(scrape_set_info("https://shop.lego.com/en-US/Betrayal-at-Cloud-City-75222"))
+#print(scrape_set_list("https://shop.lego.com/en-US/category/star-wars"))
+build_db()
 
 cache_file = open(CACHE_FNAME, 'w')
 cache_contents = json.dumps(CACHE_DICTION)

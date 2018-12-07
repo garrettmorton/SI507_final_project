@@ -1,5 +1,11 @@
+########	For loading the html into the BeautifulSoup processing, download pages manually:
+########	as as html in Chrome, open in IE, download page source as html by hand--do this
+########	for each theme page, then process those through BeautifulSoup processing functions.
+########	But keep current versions of data_collect.py and backups of html_cache.json and
+########	lego.db, and also commit and push those for reference.
+
 import requests
-from bs4 import BeautifulSoup, SoupStrainer
+from bs4 import BeautifulSoup, UnicodeDammit
 import json
 import sqlite3 as sqlite
 
@@ -37,14 +43,21 @@ class LegoSet():
 		self.tags = tags
 		self.theme = theme
 
+	def __str__(self):
+		return "{}, {}, {}, {}, {}, {}, {}, {}, ".format(*(self.name, self.number, self.price, self.pieces, self.age_low, self.age_high, self.tags, self.theme))
+
 def scrape_theme_list():
 	#scrape html of page listing themes
 	url = "https://shop.lego.com/en-US/category/themes"
 	if url in CACHE_DICTION.keys():
 		html_chunk = CACHE_DICTION[url]
+		dammit = UnicodeDammit(html_chunk)
+		html_chunk = dammit.unicode_markup
 		theme_ul = BeautifulSoup(html_chunk, 'html.parser')
 	else:
 		html = requests.get(url).text
+		dammit = UnicodeDammit(html)
+		html = dammit.unicode_markup
 		soup = BeautifulSoup(html, 'html.parser')
 		theme_ul = soup.find(class_="CategoryListingPagestyle__List-s880qxz-0 hOTIjn")#CategoryListingPagestyle__Item-s880qxz-1 feEoDW")
 		html_chunk = str(theme_ul)
@@ -60,11 +73,17 @@ def scrape_theme_list():
 	return url_list #[url, url, url]
 
 def scrape_set_info(url):
+	#print(url)
 	if url in CACHE_DICTION.keys():
 		html_chunk = CACHE_DICTION[url]
+		dammit = UnicodeDammit(html_chunk)
+		html_chunk = dammit.unicode_markup
 		data_div = BeautifulSoup(html_chunk, 'html.parser')
 	else:
+		#print(url)
 		html = requests.get(url).text
+		dammit = UnicodeDammit(html)
+		html = dammit.unicode_markup
 		soup = BeautifulSoup(html, 'html.parser')
 		data_div = soup.find("div", attrs={"data-test":"product-view__itemscope"})
 		html_chunk = str(data_div)
@@ -97,44 +116,45 @@ def scrape_set_info(url):
 	return set_tuple # (name, number, price, pieces, age_low, age_high, [tag, tag, tag])
 
 def scrape_set_list(baseurl):
+	if "MINDSTORMS" in baseurl:
+		baseurl = baseurl.replace("MINDSTORMS-ByTheme","category/mindstorms")
 	theme = baseurl.split("/")[-1]
+	theme_fname = "pages/" + theme + ".txt"
 	theme = theme.replace("-", " ").capitalize()
 	set_objects = []
 
-	#scrape every page of paginated list
-	pagination = True
-	pager = 1
-	while pagination:
-		list_page_url = baseurl + "?page=" + str(pager)
-		if list_page_url in CACHE_DICTION.keys():
-			html_chunk = CACHE_DICTION[list_page_url]
-			set_ul = BeautifulSoup(html_chunk, 'html.parser')
-		else:
-			html = requests.get(list_page_url).text
-			soup = BeautifulSoup(html, 'html.parser')
-			set_ul = soup.find_all("ul", class_="ProductGridstyles__Grid-lc2zkx-2 dijnMv")
-			test_length = set_ul[0].find_all("li")
-			if len(test_length) == 0:
-				pagination = False
-				break
-			set_ul = set_ul[0]
-			html_chunk = str(set_ul)
-			CACHE_DICTION[list_page_url] = html_chunk
+	#scrape list of all sets in theme
+	if baseurl in CACHE_DICTION.keys():
+		html_chunk = CACHE_DICTION[baseurl]
+		dammit = UnicodeDammit(html_chunk)
+		html_chunk = dammit.unicode_markup
+		set_ul = BeautifulSoup(html_chunk, 'html.parser')
+	else:
+		theme_f = open(theme_fname, "r", encoding='utf-8')
+		html = theme_f.read()
+		theme_f.close()
+		dammit = UnicodeDammit(html)
+		html = dammit.unicode_markup
+		soup = BeautifulSoup(html, 'html.parser')
+		#print(soup.prettify())
+		set_ul = soup.find("ul", class_="ProductGridstyles__Grid-lc2zkx-2 dijnMv")
+		html_chunk = str(set_ul)
+		CACHE_DICTION[baseurl] = html_chunk
+	#print(html_chunk)
+		
+	set_a_tags = set_ul.find_all("a", class_="ProductImage__ProductImageLink-s1x2glqd-0 esZrQH")
+	for item in set_a_tags:
+		set_url = item["href"]
+		set_tuple = scrape_set_info(set_url)
+		set_object = LegoSet(*set_tuple, theme)
+		set_objects.append(set_object)
+		#print(set_object)
 
-		set_a_tags = set_ul.find_all("a", class_="ProductImage__ProductImageLink-s1x2glqd-0 esZrQH")
-		for item in set_a_tags:
-			set_url = "https://shop.lego.com" + item["href"]
-			#print("{} || {}".format(list_page_url, set_url)) #for debugging
-			#print("page {}: {}".format(pager, item["href"].split("/")[-1])) #for debugging
-			set_tuple = scrape_set_info(set_url)
-			set_objects.append(LegoSet(*set_tuple, theme))
 
-		cache_file = open(CACHE_FNAME, 'w')
-		cache_contents = json.dumps(CACHE_DICTION)
-		cache_file.write(cache_contents)
-		cache_file.close()
-
-		pager += 1
+	cache_file = open(CACHE_FNAME, 'w')
+	cache_contents = json.dumps(CACHE_DICTION)
+	cache_file.write(cache_contents)
+	cache_file.close()
 
 	return set_objects
 
@@ -144,7 +164,8 @@ def scrape_all_data():
 	for theme in theme_url_list:
 		theme_set_list = scrape_set_list(theme)
 		for set_object in theme_set_list:
-			set_object_list.eppend(set_object)
+			set_object_list.append(set_object)
+			print(set_object)
 
 	return set_object_list
 
@@ -216,6 +237,7 @@ def populate_db(object_list):
 				VALUES (?)
 				'''
 				cur.execute(statement, [tag])
+				conn.commit()
 				tag_list.append(tag)
 			statement = '''
 			INSERT INTO SetLinkTag (SetId, TagId)
@@ -230,11 +252,18 @@ def populate_db(object_list):
 
 #####################################
 ######-------FOR TESTING-------######
-#scrape_theme_list()
-object_list = scrape_set_list("https://shop.lego.com/en-US/category/star-wars")
+
+object_list = scrape_all_data()
+build_db()
 populate_db(object_list)
 
-cache_file = open(CACHE_FNAME, 'w')
+
+
+#object_list = scrape_set_list("https://shop.lego.com/en-US/category/fantastic-beasts")
+# object_list = scrape_set_list("https://shop.lego.com/en-US/category/unikitty")
+#object_list = scrape_set_list("https://shop.lego.com/en-US/category/star-wars")
+
+cache_file = open(CACHE_FNAME, 'w', encoding='utf-8')
 cache_contents = json.dumps(CACHE_DICTION)
 cache_file.write(cache_contents)
 cache_file.close()

@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup, UnicodeDammit
 import json
 import sqlite3 as sqlite
+from secrets import PLOTLY_USERNAME, PLOTLY_API_KEY
 
 import sys
 import codecs
@@ -45,6 +46,19 @@ class LegoSet():
 
 	def __str__(self):
 		return "{}, {}, {}, {}, {}, {}, {}, {}, ".format(*(self.name, self.number, self.price, self.pieces, self.age_low, self.age_high, self.tags, self.theme))
+
+def fix_encoding(prob_string):
+	if isinstance(prob_string, str):
+		prob_string = prob_string.replace("Â®", "®")
+		prob_string = prob_string.replace("â¢", "™")
+		prob_string = prob_string.replace("â¢", "™")
+		prob_string = prob_string.replace("Â´", "'")
+		prob_string = prob_string.replace("â", "-")
+		prob_string = prob_string.replace("Ã©", "é")
+		prob_string = prob_string.replace("â", "'")
+
+	return prob_string
+
 
 def scrape_theme_list():
 	#scrape html of page listing themes
@@ -94,7 +108,9 @@ def scrape_set_info(url):
 	tags_list = []
 	tags_tags = data_div.find_all("a", class_="badges__tag")
 	for item in tags_tags:
-		tags_list.append(item.get_text())
+		tag_placeholder = item.get_text()
+		tag_placeholder = fix_encoding(tag_placeholder)
+		tags_list.append(tag_placeholder)
 
 	number = data_div.find("dd", class_="product-details__product-code").get_text()
 	pieces_tag = data_div.find("dd", class_="product-details__piece-count")
@@ -111,16 +127,19 @@ def scrape_set_info(url):
 		age_low = age_tuple[0]
 		age_high = age_tuple[2]
 
-	set_tuple = (name, number, price, pieces, age_low, age_high, tags_list)
+	set_list = [name, number, price, pieces, age_low, age_high, tags_list]
 
-	return set_tuple # (name, number, price, pieces, age_low, age_high, [tag, tag, tag])
+	for item in set_list[:-1]:
+		item = fix_encoding(item)
+
+	return set_list # [name, number, price, pieces, age_low, age_high, [tag, tag, tag]]
 
 def scrape_set_list(baseurl):
 	if "MINDSTORMS" in baseurl:
 		baseurl = baseurl.replace("MINDSTORMS-ByTheme","category/mindstorms")
 	theme = baseurl.split("/")[-1]
 	theme_fname = "pages/" + theme + ".txt"
-	theme = theme.replace("-", " ").capitalize()
+	theme = theme.replace("-", " ").title()
 	set_objects = []
 
 	#scrape list of all sets in theme
@@ -145,8 +164,8 @@ def scrape_set_list(baseurl):
 	set_a_tags = set_ul.find_all("a", class_="ProductImage__ProductImageLink-s1x2glqd-0 esZrQH")
 	for item in set_a_tags:
 		set_url = item["href"]
-		set_tuple = scrape_set_info(set_url)
-		set_object = LegoSet(*set_tuple, theme)
+		set_list = scrape_set_info(set_url)
+		set_object = LegoSet(*set_list, theme)
 		set_objects.append(set_object)
 		#print(set_object)
 
@@ -248,6 +267,9 @@ def populate_db(object_list):
 		conn.commit()
 
 	pass
+
+
+
 
 
 #####################################

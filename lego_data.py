@@ -45,13 +45,14 @@ class LegoSet():
 		self.theme = theme
 
 	def __str__(self):
-		return "{}, {}, {}, {}, {}, {}, {}, {}, ".format(*(self.name, self.number, self.price, self.pieces, self.age_low, self.age_high, self.tags, self.theme))
+		return "{}, {}, {}, {}, {}, {}, {}, {}, ".format(self.name, self.number, self.price, self.pieces, self.age_low, self.age_high, self.tags, self.theme)
 
 def fix_encoding(prob_string):
+	#fixes some encoding problems, removes trademark and registered symbols
 	if isinstance(prob_string, str):
-		prob_string = prob_string.replace("Â®", "®")
-		prob_string = prob_string.replace("â¢", "™")
-		prob_string = prob_string.replace("â¢", "™")
+		prob_string = prob_string.replace("Â®", "")
+		prob_string = prob_string.replace("â¢", "")
+		prob_string = prob_string.replace("â¢", "")
 		prob_string = prob_string.replace("Â´", "'")
 		prob_string = prob_string.replace("â", "-")
 		prob_string = prob_string.replace("Ã©", "é")
@@ -129,8 +130,8 @@ def scrape_set_info(url):
 
 	set_list = [name, number, price, pieces, age_low, age_high, tags_list]
 
-	for item in set_list[:-1]:
-		item = fix_encoding(item)
+	for i in range(len(set_list) -1):
+		set_list[i] = fix_encoding(set_list[i])
 
 	return set_list # [name, number, price, pieces, age_low, age_high, [tag, tag, tag]]
 
@@ -165,6 +166,7 @@ def scrape_set_list(baseurl):
 	for item in set_a_tags:
 		set_url = item["href"]
 		set_list = scrape_set_info(set_url)
+		print(set_list)
 		set_object = LegoSet(*set_list, theme)
 		set_objects.append(set_object)
 		#print(set_object)
@@ -266,6 +268,8 @@ def populate_db(object_list):
 
 		conn.commit()
 
+	conn.close()
+
 	pass
 
 
@@ -279,6 +283,7 @@ object_list = scrape_all_data()
 build_db()
 populate_db(object_list)
 
+# scrape_set_list("https://shop.lego.com/en-US/category/architecture")
 
 
 #object_list = scrape_set_list("https://shop.lego.com/en-US/category/fantastic-beasts")

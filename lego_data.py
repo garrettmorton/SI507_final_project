@@ -279,9 +279,9 @@ def populate_db(object_list):
 #####################################
 ######-------FOR TESTING-------######
 
-object_list = scrape_all_data()
-build_db()
-populate_db(object_list)
+# object_list = scrape_all_data()
+# build_db()
+# populate_db(object_list)
 
 # scrape_set_list("https://shop.lego.com/en-US/category/architecture")
 

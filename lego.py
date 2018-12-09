@@ -436,7 +436,50 @@ def process_tag(arg_dict):
     cur = conn.cursor()
     coordinates_list = []
 
+    if "price" in arg_dict.keys():
+        statement = '''
+        SELECT t.TagName, AVG(s.Price)
+        FROM Sets AS s JOIN SetLinkTag AS link ON s.Id=link.SetId
+            JOIN Tags AS t ON link.TagId=t.Id
+        GROUP BY t.TagName ORDER By t.TagName ASC
+        '''
+        results = cur.execute(statement).fetchall()
 
+        x_coor = []
+        y_coor = []
+        for pair in results:
+            x_coor.append(pair[0])
+            y_coor.append(pair[1])
+        coordinates_list.append({"x":x_coor, "y":y_coor})
+
+    elif "priceper" in arg_dict.keys():
+        statement = '''
+        SELECT t.TagName, AVG(s.Price), AVG(s.Pieces)
+        FROM Sets AS s JOIN SetLinkTag AS link ON s.Id=link.SetId
+            JOIN Tags AS t ON link.TagId=t.Id
+        WHERE s.Pieces NOT NULL
+        GROUP BY t.TagName ORDER By t.TagName ASC
+        '''
+        results = cur.execute(statement).fetchall()
+
+        x_coor = []
+        y_coor = []
+        for pair in results:
+            x_coor.append(pair[0])
+            y_coor.append(pair[1]/pair[2])
+        coordinates_list.append({"x":x_coor, "y":y_coor})
+
+    elif "pieces" in arg_dict.keys():
+        pass
+
+    elif "number" in arg_dict.keys():
+        pass
+
+    elif "tags" in arg_dict.keys():
+        pass
+
+    else:
+        pass
 
     conn.close()
     return coordinates_list # [{"tag":tag_name,"x": x_coor, "y":y_coor}, {"tag":tag_name,"x": x_coor, "y":y_coor}]
@@ -467,18 +510,42 @@ def command_process(comm_dict):
 
 #[{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
     elif primary_command == "theme":
-        trace_list = process_theme(comm_dict["theme"])
+        coordinates = process_theme(comm_dict["theme"])
         data = []
 
-        for item in trace_list:
-            data.append(go.Scatter(
-                x = item["x"],
-                y = item["y"],
-                mode = 'lines',
-                name = item["theme"]
+        if "themes" in comm_dict["theme"].keys():
+            for item in coordinates:
+                data.append(go.Scatter(
+                    x = item["x"],
+                    y = item["y"],
+                    mode = 'lines',
+                    name = item["theme"]
+                    ))
+        else:
+            data.append(go.Bar(
+                x=coordinates[0]["x"],
+                y=coordinates[0]["y"]
                 ))
-
         py.plot(data, filename="theme")
+
+    elif primary_command == "tag":
+        coordinates = process_tag(comm_dict["tag"])
+        data = []
+
+        if "tags" in comm_dict["tag"].keys():
+            for item in coordinates:
+                data.append(go.Scatter(
+                    x = item["x"],
+                    y = item["y"],
+                    mode = 'lines',
+                    name = item["tag"]
+                    ))
+        else:
+            data.append(go.Bar(
+                x=coordinates[0]["x"],
+                y=coordinates[0]["y"]
+                ))
+        py.plot(data, filename="tag")
 
     else:
         pass
@@ -564,12 +631,12 @@ if __name__ == "__main__":
     #####################################
     ######-------FOR TESTING-------######
 
-    comm_str = "theme | themes=architecture,nexo knights"
+    comm_str = "tag | priceper"
     #comm_str = "size"
     comm_dict = command_string_handler(comm_str)
     print(comm_dict)
     print(command_validate(comm_dict))
-    print(process_size(comm_dict["theme"]))
+    print(process_tag(comm_dict["tag"]))
     command_process(comm_dict)
 
     # print(list_help_constructor())

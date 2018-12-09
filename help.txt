@@ -1,0 +1,101 @@
+
+Commands available:
+
+help
+	Description: displays this help message.
+
+	Options: None
+
+exit
+	Description: quits the program.
+
+	Options: None
+
+list
+	Description: lists all valid themes and tags.
+
+	Options: None
+
+rescrape
+	Description: use only in case of catastrophic data error.
+	Program will regather raw data from the Web from which to
+	rebuild database.
+
+	Options: None
+
+rebuild
+	Description: use only in case of catastrophic database
+	error. Program will rebuild database from cached raw data.
+
+	Options: None
+
+size
+	Description: displays a line graph plotting all LEGO sets,
+	with number of pieces on the x-axis and price per piece
+	on the y-axis.
+
+	Options: None
+
+theme
+	Description: displays a variety of graphs comparing
+	information abouts sets in different themes. Unless user
+	specifies certain themes to compare, the program will
+	plot a bar graph comparing the specified piece of information
+	across all themes. Each option should be separated with a
+	pipe character ("|").
+
+	Options (must choose at least one; if "themes" option is
+	chosen, must also choose "price", "priceper" or "number"):
+
+	* price: plots average price of sets in theme on y-axis, all
+	different themes on x-axis.
+
+	* priceper: plots average price per piece of sets in theme
+	on y-axis, all different themes on x-axis.
+	
+	* pieces: plots average number of pieces in sets in theme
+	on y-axis, all different themes on x-axis.
+	
+	* number: plots number of sets in theme on y-axis, all
+	different themes on x-axis.
+	
+	* themes: allows user to choose one or more specific themes
+	to graph. This option should use the following format:
+	"themes=star wars,the lego batman movie,mindstorms". If
+	this option is used, exactly one more option must be chosen
+	from "price", "priceper", and "number".  This option displays
+	a line graph with the chosen secondary option on the y-axis
+	and number of pieces in set on the x-axis; each different
+	theme will have a different-colored line.
+
+tag
+	Description: displays a variety of graphs comparing
+	information abouts sets with different tags. Unless user
+	specifies certain tags to compare, the program will	plot a
+	bar graph comparing the specified piece of information across
+	all tags. Each option should be separated with a pipe
+	character ("|").
+
+	Options (must choose at least one; if "tags" option is
+	chosen, must also choose "price", "priceper" or "number"):
+
+	* price: plots average price of sets with tag on y-axis, all
+	different tags on x-axis.
+
+	* priceper: plots average price per piece of sets with tag
+	on y-axis, all different tags on x-axis.
+	
+	* pieces: plots average number of pieces in sets with tag on
+	y-axis, all different tags on x-axis.
+	
+	* number: plots number of sets with tag on y-axis, all
+	different tags on x-axis.
+	
+	* tags: allows user to choose one or more specific tags
+	to graph. This option should use the following format:
+	"tags=buildings,nexo knights,seasonal". If this option is
+	used, exactly one more option must be chosen from "price",
+	"priceper", and "number".  This option displays a line graph
+	with the chosen secondary option on the y-axis and number
+	of pieces in set on the x-axis; each different tag will have
+	a different-colored line.

@@ -4,22 +4,20 @@ import json
 import sqlite3 as sqlite
 from secrets import PLOTLY_USERNAME, PLOTLY_API_KEY
 
+import plotly.plotly as py
+import plotly.graph_obj as go
+
 import sys
 import codecs
-#sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
 
 #####################################
 ######-------GLOBAL VARS-------######
+
+
 CACHE_FNAME = "html_cache.json"
 DB_NAME = "lego.db"
 
-try:
-    cache_file = open(CACHE_FNAME,'r')
-    cache_contents = cache_file.read()
-    CACHE_DICTION = json.loads(cache_contents)
-    cache_file.close()
-except:
-    CACHE_DICTION = {}
 
 ######-------------------------######
 #####################################
@@ -284,7 +282,7 @@ def command_validate(comm_dict):
 	arg_dict = comm_dict[primary_command]
 	if primary_command not in COMMAND_DICT.keys():
 		return False
-	elif pimary_command in ["help", "exit", "size"] and len(arg_dict.keys()) != 0:
+	elif pimary_command in ["help", "exit", "list", "size", "rescrape", "rebuild"] and len(arg_dict.keys()) != 0:
 		return False
 	else:
 		for arg in arg_dict.keys():
@@ -305,11 +303,45 @@ def command_validate(comm_dict):
 					pass
 	return True
 
+def command_process(comm_dict):
+	pimary_command = comm_dict.keys()[0]
+	
+	if primary_command == "help":
+		with open('help.txt') as f:
+        	return f.read()
 
-if __name__ == "__main__":
-	conn = sqlite.connect(DB_NAME)
-	cur = conn.cursor()
+    elif primary_command == ""
 
+
+
+
+
+
+def run_program():
+	get input
+	convert input with command_string_handler
+	validate converted input with command_validate
+	process command with command_process
+	repeat
+
+
+
+
+try:
+    cache_file = open(CACHE_FNAME,'r')
+    cache_contents = cache_file.read()
+    CACHE_DICTION = json.loads(cache_contents)
+    cache_file.close()
+except:
+    CACHE_DICTION = {}
+
+# object_list = scrape_all_data()
+# populate_db(object_list)
+
+conn = sqlite.connect(DB_NAME)
+cur = conn.cursor()
+
+try:
 	statement = 'SELECT DISTINCT Theme FROM Sets'
 	results = cur.execute(statement).fetchall()
 	THEME_LIST = []
@@ -321,33 +353,45 @@ if __name__ == "__main__":
 	TAG_LIST = []
 	for item in results:
 		TAG_LIST.append(item[0].lower())
+except:
+	THEME_LIST = []
+	TAG_LIST = []
 
-	conn.close()
+conn.close()
 
-	COMMAND_DICT = {
-		"help" : "",
-		"exit" : "",
-		"size" : "",
-		"theme": {
-			"price" : "",
-			"priceper" : "",
-			"pieces" : "",
-			"number" : "",
-			"themes" : THEME_LIST
-		},
-		"tag":{
-			"price" : "",
-			"priceper" : "",
-			"pieces" : "",
-			"number" : "",
-			"tags" : TAG_LIST
-		}
-
+COMMAND_DICT = {
+	"help" : "",
+	"exit" : "",
+	"list" : "",
+	"rescrape" : "",
+	"rebuild" : "",
+	"size" : "",
+	"theme": {
+		"price" : "",
+		"priceper" : "",
+		"pieces" : "",
+		"number" : "",
+		"themes" : THEME_LIST
+	},
+	"tag":{
+		"price" : "",
+		"priceper" : "",
+		"pieces" : "",
+		"number" : "",
+		"tags" : TAG_LIST
 	}
-	print(COMMAND_DICT)
+
+}
+
+# cache_file = open(CACHE_FNAME, 'w', encoding='utf-8')
+# cache_contents = json.dumps(CACHE_DICTION)
+# cache_file.write(cache_contents)
+# cache_file.close()
+
+if __name__ == "__main__":
 	#####################################
 	######-------FOR TESTING-------######
-
+	
 	# object_list = scrape_all_data()
 	# build_db()
 	# populate_db(object_list)
@@ -361,9 +405,9 @@ if __name__ == "__main__":
 
 
 
-	cache_file = open(CACHE_FNAME, 'w', encoding='utf-8')
-	cache_contents = json.dumps(CACHE_DICTION)
-	cache_file.write(cache_contents)
-	cache_file.close()
+	# cache_file = open(CACHE_FNAME, 'w', encoding='utf-8')
+	# cache_contents = json.dumps(CACHE_DICTION)
+	# cache_file.write(cache_contents)
+	# cache_file.close()
 	######-------------------------######
 	#####################################

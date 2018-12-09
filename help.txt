@@ -16,16 +16,10 @@ list
 
 	Options: None
 
-rescrape
+rebuild
 	Description: use only in case of catastrophic data error.
 	Program will regather raw data from the Web from which to
-	rebuild database.
-
-	Options: None
-
-rebuild
-	Description: use only in case of catastrophic database
-	error. Program will rebuild database from cached raw data.
+	rebuild database.  Program will then rebuild database.
 
 	Options: None
 
@@ -44,8 +38,7 @@ theme
 	across all themes. Each option should be separated with a
 	pipe character ("|").
 
-	Options (must choose at least one; if "themes" option is
-	chosen, must also choose "price", "priceper" or "number"):
+	Options (must choose exactly one):
 
 	* price: plots average price of sets in theme on y-axis, all
 	different themes on x-axis.
@@ -61,12 +54,10 @@ theme
 	
 	* themes: allows user to choose one or more specific themes
 	to graph. This option should use the following format:
-	"themes=star wars,the lego batman movie,mindstorms". If
-	this option is used, exactly one more option must be chosen
-	from "price", "priceper", and "number".  This option displays
-	a line graph with the chosen secondary option on the y-axis
-	and number of pieces in set on the x-axis; each different
-	theme will have a different-colored line.
+	"themes=star wars,the lego batman movie,mindstorms". This
+	option displays a line graph with price per piece on the y-axis
+	and number of pieces in set on the x-axis; each different theme
+	will have a different-colored line.
 
 tag
 	Description: displays a variety of graphs comparing
@@ -76,8 +67,7 @@ tag
 	all tags. Each option should be separated with a pipe
 	character ("|").
 
-	Options (must choose at least one; if "tags" option is
-	chosen, must also choose "price", "priceper" or "number"):
+	Options (must choose exactly one):
 
 	* price: plots average price of sets with tag on y-axis, all
 	different tags on x-axis.
@@ -93,9 +83,7 @@ tag
 	
 	* tags: allows user to choose one or more specific tags
 	to graph. This option should use the following format:
-	"tags=buildings,nexo knights,seasonal". If this option is
-	used, exactly one more option must be chosen from "price",
-	"priceper", and "number".  This option displays a line graph
-	with the chosen secondary option on the y-axis and number
+	"tags=buildings,nexo knights,seasonal". This option displays
+	a line graph with price per piece on the y-axis and number
 	of pieces in set on the x-axis; each different tag will have
 	a different-colored line.

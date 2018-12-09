@@ -99,7 +99,7 @@ def scrape_set_info(url):
     tags_tags = data_div.find_all("a", class_="badges__tag")
     for item in tags_tags:
         tag_placeholder = item.get_text()
-        tag_placeholder = fix_encoding(tag_placeholder)
+        tag_placeholder = fix_encoding(tag_placeholder).title()
         tags_list.append(tag_placeholder)
 
     number = data_div.find("dd", class_="product-details__product-code").get_text()
@@ -335,7 +335,7 @@ def process_size(arg_dict):
     coordinates_list = []
 
     statement = '''
-    SELECT Pieces, Price FROM Sets
+    SELECT Pieces, AVG(Price) FROM Sets WHERE Pieces NOT NULL AND Pieces > 1 AND Price NOT NULL GROUP BY Pieces
     '''
     
     results = cur.execute(statement).fetchall()
@@ -353,7 +353,7 @@ def process_size(arg_dict):
     return coordinates_list # [{"x": x_coor, "y":y_coor}]
 
 def process_theme(arg_dict):
-    #arg_dict = {"priceper":"", "themes":["star wars", "architecture"]}
+    #arg_dict = {"themes":["star wars", "architecture"]}
     conn = sqlite.connect(DB_NAME)
     cur = conn.cursor()
     coordinates_list = []
@@ -413,10 +413,9 @@ def process_theme(arg_dict):
     elif "themes" in arg_dict.keys():
         for item in arg_dict["themes"]:
             statement = '''
-            SELECT Pieces, Price From Sets WHERE Theme="{}" AND Price NOT NULL AND Pieces NOT NULL
+            SELECT Pieces, AVG(Price) From Sets WHERE Theme="{}" AND Price NOT NULL AND Pieces NOT NULL GROUP BY Pieces
             '''.format(item.title())
             results = cur.execute(statement).fetchall()
-            print(results)
 
             x_coor = []
             y_coor = []
@@ -428,9 +427,19 @@ def process_theme(arg_dict):
     else:
         pass
 
-
     conn.close()
     return coordinates_list # [{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
+
+def process_tag(arg_dict):
+    #arg_dict = {"tags":["star wars", "buildings"]}
+    conn = sqlite.connect(DB_NAME)
+    cur = conn.cursor()
+    coordinates_list = []
+
+
+
+    conn.close()
+    return coordinates_list # [{"tag":tag_name,"x": x_coor, "y":y_coor}, {"tag":tag_name,"x": x_coor, "y":y_coor}]
 
 def command_process(comm_dict):
     primary_command = list(comm_dict.keys())[0]
@@ -448,7 +457,28 @@ def command_process(comm_dict):
         return "Database rebuilt from newly acquired data"
 
     elif primary_command == "size":
-        pass
+        coordinates = process_size(comm_dict["size"])
+        data = [go.Bar(
+                x = coordinates[0]["x"],
+                y = coordinates[0]["y"]
+            )]
+
+        py.plot(data, filename='size')
+
+#[{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
+    elif primary_command == "theme":
+        trace_list = process_theme(comm_dict["theme"])
+        data = []
+
+        for item in trace_list:
+            data.append(go.Scatter(
+                x = item["x"],
+                y = item["y"],
+                mode = 'lines',
+                name = item["theme"]
+                ))
+
+        py.plot(data, filename="theme")
 
     else:
         pass
@@ -534,12 +564,13 @@ if __name__ == "__main__":
     #####################################
     ######-------FOR TESTING-------######
 
-    #comm_str = "theme | themes=star wars,mindstorms"
-    comm_str = "theme | themes=star wars,mindstorms"
+    comm_str = "theme | themes=architecture,nexo knights"
+    #comm_str = "size"
     comm_dict = command_string_handler(comm_str)
     print(comm_dict)
     print(command_validate(comm_dict))
-    print(process_theme(comm_dict["theme"]))
+    print(process_size(comm_dict["theme"]))
+    command_process(comm_dict)
 
     # print(list_help_constructor())
 

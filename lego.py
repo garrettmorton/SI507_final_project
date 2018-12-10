@@ -302,29 +302,32 @@ def command_validate(comm_dict):
     primary_command = list(comm_dict.keys())[0]
     arg_dict = comm_dict[primary_command]
     if primary_command not in COMMAND_DICT.keys():
-        print("error 1") #for debugging
+        #print("error 1") #for debugging
         return False
-    elif primary_command in ["help", "exit", "list", "size", "rescrape", "rebuild"] and len(arg_dict.keys()) != 0:
-        print("error 2") #for debugging
+    elif primary_command not in ["theme","tag"] and len(arg_dict.keys()) != 0:
+        #print("error 2") #for debugging
+        return False
+    elif primary_command in ["theme","tag"] and len(arg_dict.keys()) != 1:
+        #print("error 3") #for debugging
         return False
     else:
         for arg in arg_dict.keys():
             if arg not in COMMAND_DICT[primary_command]:
-                print("error 3") #for debugging
+                #print("error 4") #for debugging
                 return False
             elif len(arg_dict.keys()) != 1:
-                print("error 4") #for debugging
+                #print("error 5") #for debugging
                 return False
             else:
                 if arg == "themes":
                     for theme in arg_dict[arg]:
                         if theme not in COMMAND_DICT[primary_command][arg]:
-                            print("error 5") #for debugging
+                            #print("error 6") #for debugging
                             return False
                 elif arg == "tags":
                     for tag in arg_dict[arg]:
                         if tag not in COMMAND_DICT[primary_command][arg]:
-                            print("error 6") #for debugging
+                            #print("error 7") #for debugging
                             return False
                 else:
                     pass
@@ -549,6 +552,7 @@ def command_process(comm_dict):
             )]
 
         py.plot(data, filename='size')
+        return ""
 
 #[{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
     elif primary_command == "theme":
@@ -569,6 +573,7 @@ def command_process(comm_dict):
                 y=coordinates[0]["y"]
                 ))
         py.plot(data, filename="theme")
+        return ""
 
     elif primary_command == "tag":
         coordinates = process_tag(comm_dict["tag"])
@@ -588,24 +593,26 @@ def command_process(comm_dict):
                 y=coordinates[0]["y"]
                 ))
         py.plot(data, filename="tag")
+        return ""
 
     else:
         pass
 
+    return ""
+
+def lego_program():
+    command_str = ""
+    feedback = "\nEnter a command: "
+    while command_str.strip() != "exit":
+        command_str = input(feedback)
+        feedback = "\nEnter a command: "
+
+        command_dict = command_string_handler(command_str)
+        if not command_validate(command_dict):
+            feedback = "\nCommand not recognized.\nEnter a command: "
+        else:
+            print(command_process(command_dict))
     pass
-
-
-
-
-
-RUN_PROGRAM = '''
-def run_program():
-  get input
-  convert input with command_string_handler
-  validate converted input with command_validate
-  process command with command_process
-  repeat
-'''
 
 
 
@@ -673,13 +680,14 @@ if __name__ == "__main__":
     #####################################
     ######-------FOR TESTING-------######
 
-    comm_str = "tag | tags=buildings,vehicles"
-    #comm_str = "size"
-    comm_dict = command_string_handler(comm_str)
-    print(comm_dict)
-    print(command_validate(comm_dict))
-    print(process_tag(comm_dict["tag"]))
-    command_process(comm_dict)
+    lego_program()
+    # comm_str = "tag | tags=buildings,vehicles"
+    # #comm_str = "size"
+    # comm_dict = command_string_handler(comm_str)
+    # print(comm_dict)
+    # print(command_validate(comm_dict))
+    # print(process_tag(comm_dict["tag"]))
+    # command_process(comm_dict)
 
     # print(list_help_constructor())
 

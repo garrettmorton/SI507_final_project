@@ -22,6 +22,7 @@ DB_NAME = "lego.db"
 ######-------------------------######
 #####################################
 
+##a class to hold information about specific LEGO sets after scraping but before being entered into the database
 class LegoSet():
     def __init__(self, name, number, price, pieces, age_low, age_high, tags, theme):
         self.name = name
@@ -36,6 +37,7 @@ class LegoSet():
     def __str__(self):
         return "{}, {}, {}, {}, {}, {}, {}, {}, ".format(self.name, self.number, self.price, self.pieces, self.age_low, self.age_high, self.tags, self.theme)
 
+#had an encoding issue I couldn't figure out a fix for, so this function remove weird symbols.  It originally replaced them with the unicode version of those symbols (i.e replacing Â® with ®), but then I realized those symbols would be inconvenient for database queries, so I changed the function to remove them entirely
 def fix_encoding(prob_string):
     #fixes some encoding problems, removes trademark and registered symbols
     if isinstance(prob_string, str):
@@ -49,15 +51,16 @@ def fix_encoding(prob_string):
 
     return prob_string
 
-
+#a function to scrape two things from the LEGO website: the name of each theme and a url to the shop page displaying the sets in that theme, returns a list of urls (which include the theme name in a reliable pattern)
 def scrape_theme_list():
-    #scrape html of page listing themes
     url = "https://shop.lego.com/en-US/category/themes"
+    #if that relevant portion of that page has already been cached, retrieve html text from cache
     if url in CACHE_DICTION.keys():
         html_chunk = CACHE_DICTION[url]
         dammit = UnicodeDammit(html_chunk)
         html_chunk = dammit.unicode_markup
         theme_ul = BeautifulSoup(html_chunk, 'html.parser')
+    #if page has not been cached yet, retrieve from web, extract relevant portion and cache it
     else:
         html = requests.get(url).text
         dammit = UnicodeDammit(html)
@@ -67,6 +70,7 @@ def scrape_theme_list():
         html_chunk = str(theme_ul)
         CACHE_DICTION[url] = html_chunk
 
+    #then extract from that page all the urls links to individual theme pages
     url_list = []
     themes = theme_ul.find_all("a", class_="CategoryLeafstyles__ImagesLink-is33yg-4 iQaIAl")
     for item in themes:
@@ -76,6 +80,7 @@ def scrape_theme_list():
     
     return url_list #[url, url, url]
 
+#a function to scrape an individual set detail page for information about that set to be later entered into database
 def scrape_set_info(url):
     #print(url)
     if url in CACHE_DICTION.keys():

@@ -176,7 +176,7 @@ def scrape_all_data():
         theme_set_list = scrape_set_list(theme)
         for set_object in theme_set_list:
             set_object_list.append(set_object)
-            #print(set_object)
+            print(set_object)
 
     return set_object_list
 
@@ -255,6 +255,7 @@ def populate_db(object_list):
             VALUES ((SELECT Id FROM Sets WHERE SetNumber=?), (SELECT Id FROM Tags WHERE TagName=?))
             '''
             cur.execute(statement, [legoset.number, tag])
+        print(legoset)
 
         conn.commit()
 
@@ -322,7 +323,7 @@ def command_validate(comm_dict):
                             return False
                 elif arg == "tags":
                     for tag in arg_dict[arg]:
-                        if theme not in COMMAND_DICT[primary_command][arg]:
+                        if tag not in COMMAND_DICT[primary_command][arg]:
                             print("error 6") #for debugging
                             return False
                 else:
@@ -503,7 +504,21 @@ def process_tag(arg_dict):
         coordinates_list.append({"x":x_coor, "y":y_coor})
 
     elif "tags" in arg_dict.keys():
-        pass
+        for item in arg_dict["tags"]:
+            statement = '''
+            SELECT Pieces, AVG(Price)
+            From Sets AS s JOIN SetLinkTag AS link ON s.Id=link.SetId
+                JOIN Tags AS t ON link.TagId=t.Id
+            WHERE t.TagName="{}" AND Price NOT NULL AND Pieces NOT NULL GROUP BY Pieces
+            '''.format(item.title())
+            results = cur.execute(statement).fetchall()
+
+            x_coor = []
+            y_coor = []
+            for pair in results:
+                x_coor.append(pair[0])
+                y_coor.append(pair[1]/pair[0])
+            coordinates_list.append({"tag":item.title(), "x":x_coor, "y":y_coor})
 
     else:
         pass
@@ -658,7 +673,7 @@ if __name__ == "__main__":
     #####################################
     ######-------FOR TESTING-------######
 
-    comm_str = "tag | number"
+    comm_str = "tag | tags=buildings,vehicles"
     #comm_str = "size"
     comm_dict = command_string_handler(comm_str)
     print(comm_dict)

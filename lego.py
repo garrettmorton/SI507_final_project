@@ -542,6 +542,7 @@ def command_process(comm_dict):
     elif primary_command == "rebuild":
         object_list = scrape_all_data()
         build_db(object_list)
+
         return "Database rebuilt from newly acquired data"
 
     elif primary_command == "size":
@@ -624,12 +625,8 @@ try:
 except:
     CACHE_DICTION = {}
 
-# object_list = scrape_all_data()
-# populate_db(object_list)
-
 conn = sqlite.connect(DB_NAME)
 cur = conn.cursor()
-
 try:
     statement = 'SELECT DISTINCT Theme FROM Sets'
     results = cur.execute(statement).fetchall()
@@ -645,7 +642,6 @@ try:
 except:
     THEME_LIST = []
     TAG_LIST = []
-
 conn.close()
 
 COMMAND_DICT = {
@@ -677,9 +673,6 @@ COMMAND_DICT = {
 # cache_file.close()
 
 if __name__ == "__main__":
-    #####################################
-    ######-------FOR TESTING-------######
-
     lego_program()
     # comm_str = "tag | tags=buildings,vehicles"
     # #comm_str = "size"

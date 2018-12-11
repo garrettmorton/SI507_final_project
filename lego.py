@@ -8,6 +8,7 @@ import plotly.plotly as py
 import plotly.graph_objs as go
 
 import sys
+import os
 import codecs
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
 
@@ -83,11 +84,13 @@ def scrape_theme_list():
 #a function to scrape an individual set detail page for information about that set to be later entered into database
 def scrape_set_info(url):
     #print(url)
+    #if that relevant portion of that page has already been cached, retrieve html text from cache
     if url in CACHE_DICTION.keys():
         html_chunk = CACHE_DICTION[url]
         dammit = UnicodeDammit(html_chunk)
         html_chunk = dammit.unicode_markup
         data_div = BeautifulSoup(html_chunk, 'html.parser')
+    #if page has not been cached yet, retrieve from web, extract relevant portion and cache it
     else:
         #print(url)
         html = requests.get(url).text
@@ -98,8 +101,10 @@ def scrape_set_info(url):
         html_chunk = str(data_div)
         CACHE_DICTION[url] = html_chunk
 
+    #extract information to pass into LegoSet objects
     name = data_div.find(class_="overview__name markup").get_text()
     price = data_div.find(class_="product-price__list-price").get_text()[1:]
+    #collating "tags" that live in multiple html tags into one list of text tags
     tags_list = []
     tags_tags = data_div.find_all("a", class_="badges__tag")
     for item in tags_tags:
@@ -109,11 +114,13 @@ def scrape_set_info(url):
 
     number = data_div.find("dd", class_="product-details__product-code").get_text()
     pieces_tag = data_div.find("dd", class_="product-details__piece-count")
+    #not all "sets" (like key chains) have no piece attribute on the website, so this prevents raising an error while maintaining the information that there are no pieces
     if pieces_tag == None:
         pieces = None
     else:
         pieces = pieces_tag.get_text()
     ages = data_div.find("dd", class_="product-details__ages").get_text()
+    #split age range "X-Y" into two datapoints: low age = X and high age = Y (unless there is no "upper limit")
     age_tuple = ages.partition("-")
     if age_tuple[1] == "":
         age_low = ages[:-1]
@@ -124,25 +131,33 @@ def scrape_set_info(url):
 
     set_list = [name, number, price, pieces, age_low, age_high, tags_list]
 
+    #eliminate weird encoding errors in each text element of this list (leaving out tags_list because we looped through that earlier)
     for i in range(len(set_list) -1):
         set_list[i] = fix_encoding(set_list[i])
 
     return set_list # [name, number, price, pieces, age_low, age_high, [tag, tag, tag]]
 
+#function takes in the url for a page listing all the sets in a theme and return a list of LegoSet Python objects
+#it extracts the name of the theme from the url, then scrapes a list of links to individual set detail pages
+#it then passes each one into scrape_set_info, takes the returned list of individual set data and uses it to construct a LegoSet object
 def scrape_set_list(baseurl):
+    #the Mindstorms link does not fit the general pattern
     if "MINDSTORMS" in baseurl:
         baseurl = baseurl.replace("MINDSTORMS-ByTheme","category/mindstorms")
+    #extract theme name from theme list page url, save to use later when constructing LegoSet objects
     theme = baseurl.split("/")[-1]
     theme_fname = "pages/" + theme + ".txt"
     theme = theme.replace("-", " ").title()
     set_objects = []
 
     #scrape list of all sets in theme
+    #if that relevant portion of that page has already been cached, retrieve html text from cache
     if baseurl in CACHE_DICTION.keys():
         html_chunk = CACHE_DICTION[baseurl]
         dammit = UnicodeDammit(html_chunk)
         html_chunk = dammit.unicode_markup
         set_ul = BeautifulSoup(html_chunk, 'html.parser')
+    #if page has not been cached yet, retrieve from web, extract relevant portion and cache it
     else:
         theme_f = open(theme_fname, "r", encoding='utf-8')
         html = theme_f.read()
@@ -155,17 +170,19 @@ def scrape_set_list(baseurl):
         html_chunk = str(set_ul)
         CACHE_DICTION[baseurl] = html_chunk
     #print(html_chunk)
-        
+    
+    #gets a list of <a> tags that contain links to set detail pages    
     set_a_tags = set_ul.find_all("a", class_="ProductImage__ProductImageLink-s1x2glqd-0 esZrQH")
+    #passes each set url through scrape_set_info to get information about that set
     for item in set_a_tags:
         set_url = item["href"]
         set_list = scrape_set_info(set_url)
-        #print(set_list)
+        #constructs LegoSet object using the information returned by scrape_set_info
         set_object = LegoSet(*set_list, theme)
         set_objects.append(set_object)
         #print(set_object)
 
-
+    #make sure cache file is up to date
     cache_file = open(CACHE_FNAME, 'w')
     cache_contents = json.dumps(CACHE_DICTION)
     cache_file.write(cache_contents)
@@ -173,18 +190,22 @@ def scrape_set_list(baseurl):
 
     return set_objects
 
+#function scrapes list of all theme urls, then puts each theme url through scrape_set_list
 def scrape_all_data():
-
+    #gets a list of urls for theme pages
     theme_url_list = scrape_theme_list()
     set_object_list = []
+    #for each theme page, scrape information from it and all set detail pages linked from it
     for theme in theme_url_list:
         theme_set_list = scrape_set_list(theme)
         for set_object in theme_set_list:
             set_object_list.append(set_object)
-            print(set_object)
+            #print(set_object)
 
+    #returns a list of LegoSet objects that will be used to build database
     return set_object_list
 
+#initializes database
 def build_db():
     conn = sqlite.connect(DB_NAME)
     cur = conn.cursor()
@@ -545,7 +566,11 @@ def command_process(comm_dict):
         return list_help_constructor()
 
     elif primary_command == "rebuild":
+        #delete existing database before rebuilding
+        os.remove(DB_NAME)
+        #rescrape from cache (or, where necessary, the web)
         object_list = scrape_all_data()
+        #build new database from processed cache/scrape data
         build_db(object_list)
 
         return "Database rebuilt from newly acquired data"

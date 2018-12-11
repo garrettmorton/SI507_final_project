@@ -478,13 +478,14 @@ def process_theme(arg_dict):
                 x_coor.append(pair[0])
                 y_coor.append(pair[1]/pair[0])
             coordinates_list.append({"theme":item.title(), "x":x_coor, "y":y_coor})
+            # [{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
+
 
     else:
         pass
 
     conn.close()
-    return coordinates_list # [{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
-
+    return coordinates_list
 def process_tag(arg_dict):
     #arg_dict = {"tags":["star wars", "buildings"]}
     conn = sqlite.connect(DB_NAME)

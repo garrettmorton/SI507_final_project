@@ -72,6 +72,18 @@ class TestCommandProcessing(unittest.TestCase):
 		coordinates = process_theme(arg_dict)
 		self.assertEqual(len(coordinates[0]["x"]), 36)
 
+		command_str = "theme | themes=jurassic world"
+		arg_dict = command_string_handler(command_str)['theme']
+		coordinates = process_theme(arg_dict)
+		self.assertEqual(len(coordinates), 1)
+		self.assertEqual(len(coordinates[0]["x"]), 14)
+
+		command_str = "theme | themes=mindstorms"
+		arg_dict = command_string_handler(command_str)['theme']
+		coordinates = process_theme(arg_dict)
+		self.assertEqual(coordinates[0]["theme"], "Mindstorms")
+		self.assertEqual(len(coordinates[0]["x"]), 3)
+
 
 
 unittest.main()

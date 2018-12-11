@@ -577,9 +577,10 @@ def command_process(comm_dict):
 
     elif primary_command == "size":
         coordinates = process_size(comm_dict["size"])
-        data = [go.Bar(
+        data = [go.Scatter(
                 x = coordinates[0]["x"],
-                y = coordinates[0]["y"]
+                y = coordinates[0]["y"],
+                mode = 'lines'
             )]
 
         py.plot(data, filename='size')
@@ -669,6 +670,7 @@ try:
     TAG_LIST = []
     for item in results:
         TAG_LIST.append(item[0].lower())
+    TAG_LIST = sorted(TAG_LIST)
 except:
     THEME_LIST = []
     TAG_LIST = []

@@ -57,9 +57,21 @@ class TestCommandProcessing(unittest.TestCase):
 		self.assertFalse(command_validate(command_dict))
 
 	def test_process_priceper(self):
-		coordinates = process_size({"size":""})
+		coordinates = process_priceper({"size":""})
 		self.assertEqual(len(coordinates), 1)
 		self.assertEqual(len(coordinates[0]["x"]), 447)
+
+	def test_process_number(self):
+		coordinates = process_number({"size":""})
+		self.assertEqual(len(coordinates), 1)
+		self.assertEqual(len(coordinates[0]["x"]), 448)
+
+	def test_process_theme(self):
+		command_str = "theme | price"
+		arg_dict = command_string_handler(command_str)['theme']
+		coordinates = process_theme(arg_dict)
+		self.assertEqual(len(coordinates[0]["x"]), 36)
+
 
 
 unittest.main()

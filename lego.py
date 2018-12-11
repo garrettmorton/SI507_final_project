@@ -290,6 +290,7 @@ def populate_db(object_list):
     pass
 
 def list_help_constructor():
+    #format so it prints out in neat columns
     help_list = ["THEMES:\n\n"]
     counter = 0
     for item in THEME_LIST:
@@ -298,6 +299,7 @@ def list_help_constructor():
         if counter%4 == 0:
             help_list.append("\n")
 
+    #format so it prints out in neat columns
     help_list.append("\nTAGS:\n\n")
     counter = 0
     for item in TAG_LIST:
@@ -359,7 +361,7 @@ def command_validate(comm_dict):
                     pass
     return True
 
-def process_size(arg_dict):
+def process_priceper(arg_dict):
     conn = sqlite.connect(DB_NAME)
     cur = conn.cursor()
     coordinates_list = []
@@ -368,6 +370,29 @@ def process_size(arg_dict):
     SELECT Pieces, AVG(Price) FROM Sets WHERE Pieces NOT NULL AND Pieces > 1 AND Price NOT NULL GROUP BY Pieces
     '''
     
+    results = cur.execute(statement).fetchall()
+
+    x_coor = []
+    y_coor = []
+
+    for pair in results:
+        x_coor.append(pair[0])
+        y_coor.append(pair[1]/pair[0])
+
+    coordinates_list.append({"x":x_coor, "y":y_coor})
+
+    conn.close()
+    return coordinates_list # [{"x": x_coor, "y":y_coor}]
+
+def process_number(arg_dict):
+    conn = sqlite.connect(DB_NAME)
+    cur = conn.cursor()
+    coordinates_list = []
+
+    statement = '''
+    SELECT Pieces, COUNT(Id) FROM Sets WHERE Pieces NOT NULL GROUP BY Pieces
+    '''
+
     results = cur.execute(statement).fetchall()
 
     x_coor = []
@@ -575,15 +600,26 @@ def command_process(comm_dict):
 
         return "Database rebuilt from newly acquired data"
 
-    elif primary_command == "size":
-        coordinates = process_size(comm_dict["size"])
+    elif primary_command == "priceper":
+        coordinates = process_priceper(comm_dict["priceper"])
         data = [go.Scatter(
                 x = coordinates[0]["x"],
                 y = coordinates[0]["y"],
                 mode = 'lines'
             )]
 
-        py.plot(data, filename='size')
+        py.plot(data, filename='priceper')
+        return ""
+
+    elif primary_command == "number":
+        coordinates = process_priceper(comm_dict["number"])
+        data = [go.Scatter(
+                x = coordinates[0]["x"],
+                y = coordinates[0]["y"],
+                mode = 'lines'
+            )]
+
+        py.plot(data, filename='number')
         return ""
 
 #[{"theme":theme_name,"x": x_coor, "y":y_coor}, {"theme":theme_name,"x": x_coor, "y":y_coor}]
@@ -681,7 +717,8 @@ COMMAND_DICT = {
     "exit" : "",
     "list" : "",
     "rebuild" : "",
-    "size" : "",
+    "priceper" : "",
+    "number" : "",
     "theme": {
         "price" : "",
         "priceper" : "",
@@ -707,7 +744,7 @@ COMMAND_DICT = {
 if __name__ == "__main__":
     lego_program()
     # comm_str = "tag | tags=buildings,vehicles"
-    # #comm_str = "size"
+    # #comm_str = "priceper"
     # comm_dict = command_string_handler(comm_str)
     # print(comm_dict)
     # print(command_validate(comm_dict))

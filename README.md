@@ -17,7 +17,8 @@ In order to run the program, simply run 'python lego.py' in your command line.  
 	'exit'
 	'list'
 	'rebuild'
-	'size'
+	'priceper'
+	'number'
 	'theme | [option]''
 	'tag | [option]'
 
@@ -29,7 +30,9 @@ List: displays a list of all valid LEGO set themes and tags, for use with the 't
 
 Rebuild: deletes the SQL database, rescrapes the web data, and rebuilds the database from scratch.  Only use the first time the program is run, or to recover from catastrophic database error.
 
-Size: Queries all LEGO sets in the database, then plots a line graph graph with the number of pieces on the x-axis and price-per-piece on the y-axis.
+Priceper: Queries all LEGO sets in the database, then plots a line graph with the number of pieces on the x-axis and price-per-piece on the y-axis.
+
+Number: Queries all LEGO sets in the database, then plots a line graph with the number of pieces on the x-axis and the number of sets with that number of pieces on the y-axis.
 
 Theme: This command is used to display a variety of graphs comparing information about sets in different themes.  This command has several options available, of which you much select one.  Commands should be formatted with a pipe character separating the main command and its option: 'theme | [option]'.
 

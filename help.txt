@@ -23,10 +23,17 @@ rebuild
 
 	Options: None
 
-size
+priceper
 	Description: displays a line graph plotting all LEGO sets,
 	with number of pieces on the x-axis and price per piece
 	on the y-axis.
+
+	Options: None
+
+number
+	Description: displays a line graph plotting all LEGO sets,
+	with the number of pieces on the x-axis and the number of
+	sets with that number of pieces on the y-axis.
 
 	Options: None
 

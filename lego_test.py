@@ -84,6 +84,19 @@ class TestCommandProcessing(unittest.TestCase):
 		self.assertEqual(coordinates[0]["theme"], "Mindstorms")
 		self.assertEqual(len(coordinates[0]["x"]), 3)
 
+	def test_process_tag(self):
+		command_str = "tag | pieces"
+		arg_dict = command_string_handler(command_str)['tag']
+		coordinates = process_tag(arg_dict)
+		self.assertEqual(len(coordinates[0]["x"]), 50)
+
+		command_str = "tag | tags=storage"
+		arg_dict = command_string_handler(command_str)['tag']
+		coordinates = process_tag(arg_dict)
+		self.assertEqual(len(coordinates), 1)
+		self.assertEqual(len(coordinates[0]["x"]), 0)
+
+
 
 
 unittest.main()
